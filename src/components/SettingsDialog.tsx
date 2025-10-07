@@ -25,22 +25,18 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Load saved values
-    setOpenrouterKey(localStorage.getItem("openrouter_api_key") || "");
-    setPexelsKey(localStorage.getItem("pexels_api_key") || "");
-    setWebhookUrl(localStorage.getItem("n8n_webhook_url") || "");
+    // Load values: keys and webhook from environment
+    setOpenrouterKey(import.meta.env.VITE_OPENROUTER_API_KEY || "");
+    setPexelsKey(import.meta.env.VITE_PEXELS_API_KEY || "");
+    setWebhookUrl(import.meta.env.VITE_N8N_WEBHOOK_URL || "");
   }, [open]);
 
   const handleSave = () => {
-    localStorage.setItem("openrouter_api_key", openrouterKey);
-    localStorage.setItem("pexels_api_key", pexelsKey);
-    localStorage.setItem("n8n_webhook_url", webhookUrl);
-    
+    // Env-based configuration; nothing to save.
     toast({
-      title: "✅ Settings Saved",
-      description: "Your API keys and webhook URL have been saved.",
+      title: "✅ Settings Loaded",
+      description: "API keys and webhook are loaded from environment variables.",
     });
-    
     onOpenChange(false);
   };
 
@@ -50,7 +46,7 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Settings</DialogTitle>
           <DialogDescription>
-            Configure your API keys and webhook URL. These are stored locally in your browser.
+            All configuration (API keys and webhook) is loaded from environment variables.
           </DialogDescription>
         </DialogHeader>
 
@@ -68,9 +64,9 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
             <Input
               type="password"
               value={openrouterKey}
-              onChange={(e) => setOpenrouterKey(e.target.value)}
               placeholder="sk-or-..."
               className="bg-background border-border"
+              disabled
             />
             <p className="text-xs text-muted-foreground">
               Used for AI text generation and rewriting.{" "}
@@ -94,9 +90,9 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
             <Input
               type="password"
               value={pexelsKey}
-              onChange={(e) => setPexelsKey(e.target.value)}
               placeholder="Your Pexels API key"
               className="bg-background border-border"
+              disabled
             />
             <p className="text-xs text-muted-foreground">
               Used for searching and fetching images by prompt.{" "}
@@ -120,9 +116,9 @@ const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
             <Input
               type="url"
               value={webhookUrl}
-              onChange={(e) => setWebhookUrl(e.target.value)}
               placeholder="https://your-n8n-instance.com/webhook/..."
               className="bg-background border-border"
+              disabled
             />
             <p className="text-xs text-muted-foreground">
               The webhook URL that receives your LinkedIn post data.

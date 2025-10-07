@@ -16,13 +16,39 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
+  // Normalize model output to a single, clean paragraph (no options or preamble)
+  const normalizeResponse = (raw: string) => {
+    let text = raw || "";
+    // Remove common option labels and markdown bolding
+    text = text
+      .replace(/\*\*?Option\s*\d+\s*:\*\*?/gi, "")
+      .replace(/Option\s*\d+\s*:/gi, "");
+    // Remove leading preambles like "Here it is", "Choose", "Response:"
+    text = text.replace(/^(?:here\s+(?:it|is)|choose.*|selected.*|response:?|output:?|final:?|options?:)\s*/i, "");
+    // Take the first non-empty paragraph if multiple paragraphs are present
+    const paragraphs = text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+    if (paragraphs.length > 0) {
+      text = paragraphs[0];
+    }
+    // If bullets or numbered lists are present, take the first clean line
+    const lines = text.split(/\n/).map((l) => l.trim()).filter(Boolean);
+    const firstLine = lines.find((l) => !/^(\*|-|\d+\.)\s/.test(l) && !/^\s*Option\s*\d+/i.test(l)) || lines[0] || "";
+    text = firstLine;
+    // Strip surrounding quotes/markdown and return
+    return text
+      .replace(/^["'`]+|["'`]+$/g, "")
+      .replace(/^\*\s*/, "")
+      .replace(/^\d+\.\s*/, "")
+      .trim();
+  };
+
   const callOpenRouter = async (prompt: string, systemPrompt: string) => {
-    const apiKey = localStorage.getItem("openrouter_api_key") || "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";
+    const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY as string | undefined;
     
     if (!apiKey) {
       toast({
         title: "Missing API Key",
-        description: "Please configure your OpenRouter API key in settings.",
+        description: "OpenRouter API key missing in environment.",
         variant: "destructive",
       });
       return null;
@@ -39,6 +65,8 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
         },
         body: JSON.stringify({
           model: "deepseek/deepseek-r1-0528-qwen3-8b:free",
+          temperature: 0.2,
+          stop: ["Option", "Choose", "Here it is", "Options"],
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: prompt },
@@ -52,10 +80,8 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
 
       const data = await response.json();
       let text = data.choices[0]?.message?.content || "";
-      // Clean up response text
-      text = text
-        .replace(/^['"`]+|['"`]+$/g, "")
-        .trim();
+      // Normalize to a single direct response with no options or preambles
+      text = normalizeResponse(text);
       return text;
     } catch (error) {
       toast({
@@ -80,7 +106,7 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
     setIsRewriting(true);
     const result = await callOpenRouter(
       value,
-      "You are a professional LinkedIn content writer. Rewrite the following text to make it more engaging, professional, and suitable for LinkedIn. Keep the same general message but enhance the writing quality. CRITICAL: Return ONLY the single rewritten text itself with absolutely no options, no numbered lists, no explanations, no preambles like 'here are options' or 'option 1/2/3', and no additional commentary whatsoever. Just output the improved text directly as if you are posting it."
+      "You are a professional LinkedIn content writer. Rewrite the user's text to be more engaging and professional while preserving the original intent. Output requirements: return exactly one final paragraph with no headings, no lists, no options, no 'Option X' labels, no preamble, no notes, no quotations, and no markdown. Respond ONLY with the rewritten text and nothing else."
     );
     
     if (result) {
@@ -97,7 +123,7 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
     setIsGenerating(true);
     const result = await callOpenRouter(
       "Generate a professional LinkedIn post",
-      "You are a professional LinkedIn content creator. Generate an engaging, professional LinkedIn post about a relevant business or industry topic. Make it authentic, valuable, and engaging. Use proper formatting with line breaks. Return only the post content without any explanations."
+      "You are a professional LinkedIn content creator. Generate one engaging, professional LinkedIn post on a relevant business or industry topic. Output requirements: return exactly one final post as plain text with natural line breaks; no headings, no lists, no options, no preamble, no notes, no quotations, and no markdown. Respond ONLY with the post content and nothing else."
     );
     
     if (result) {

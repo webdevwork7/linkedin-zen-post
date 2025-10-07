@@ -27,12 +27,12 @@ const ImageSection = ({ imageUrl, onImageUrlChange }: ImageSectionProps) => {
       return;
     }
 
-    const apiKey = localStorage.getItem("pexels_api_key") || "88Qykg1vwK4s2Q73EgXOvKaSxAH5VUHKMVGC2NBt1TXD2sJp0hnnsKia";
+    const apiKey = import.meta.env.VITE_PEXELS_API_KEY as string | undefined;
     
     if (!apiKey) {
       toast({
         title: "Missing API Key",
-        description: "Please configure your Pexels API key in settings.",
+        description: "Pexels API key missing in environment.",
         variant: "destructive",
       });
       return;

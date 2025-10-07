@@ -13,9 +13,9 @@ const ApiKeySetup = ({ onOpenSettings }: ApiKeySetupProps) => {
 
   useEffect(() => {
     const checkKeys = () => {
-      const openrouter = localStorage.getItem("openrouter_api_key");
-      const pexels = localStorage.getItem("pexels_api_key");
-      const webhook = localStorage.getItem("n8n_webhook_url");
+      const openrouter = import.meta.env.VITE_OPENROUTER_API_KEY;
+      const pexels = import.meta.env.VITE_PEXELS_API_KEY;
+      const webhook = import.meta.env.VITE_N8N_WEBHOOK_URL;
       setHasKeys(!!(openrouter && pexels && webhook));
     };
 
@@ -44,10 +44,7 @@ const ApiKeySetup = ({ onOpenSettings }: ApiKeySetupProps) => {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-    >
+    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
       <Alert variant="destructive" className="bg-primary/10 border-primary/20">
         <AlertCircle className="h-4 w-4 text-primary" />
         <AlertTitle className="text-primary">Setup Required</AlertTitle>

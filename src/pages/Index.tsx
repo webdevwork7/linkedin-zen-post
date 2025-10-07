@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Settings, Sparkles, Image as ImageIcon, Video, FileText } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import PostTypeSelector from "@/components/PostTypeSelector";
 import TextEditor from "@/components/TextEditor";
@@ -18,18 +20,19 @@ const Index = () => {
   const [caption, setCaption] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
+  const [articleUrl, setArticleUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async () => {
-    // Get webhook URL from localStorage
-    const webhookUrl = localStorage.getItem("n8n_webhook_url");
+    // Get webhook URL from environment
+    const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL as string | undefined;
     
     if (!webhookUrl) {
       toast({
         title: "Missing Configuration",
-        description: "Please configure your n8n webhook URL in settings.",
+        description: "Webhook URL missing in environment.",
         variant: "destructive",
       });
       return;
@@ -44,16 +47,53 @@ const Index = () => {
       return;
     }
 
+    // Validate required fields per post type
+    if (postType === "image" && !imageUrl.trim()) {
+      toast({
+        title: "Missing Image URL",
+        description: "Please provide an image URL for an image post.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (postType === "video" && !videoUrl.trim()) {
+      toast({
+        title: "Missing Video URL",
+        description: "Please provide a video URL for a video post.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if ((postType === "article" || postType === "article-image") && !articleUrl.trim()) {
+      toast({
+        title: "Missing Article URL",
+        description: "Please provide the article URL for this post type.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      const payload = {
+      // Build payload according to requested schema
+      const payload: Record<string, unknown> = {
+        node_type: "linkedin",
         post_type: postType,
         text: caption,
-        image_url: imageUrl || undefined,
-        video_url: videoUrl || undefined,
-        timestamp: new Date().toISOString(),
       };
+
+      if (postType === "image" || postType === "article-image") {
+        payload.image_url = imageUrl;
+      }
+      if (postType === "video") {
+        payload.video_url = videoUrl;
+      }
+      if (postType === "article" || postType === "article-image") {
+        payload.article_url = articleUrl;
+      }
 
       const response = await fetch(webhookUrl, {
         method: "POST",
@@ -77,6 +117,7 @@ const Index = () => {
       setCaption("");
       setImageUrl("");
       setVideoUrl("");
+      setArticleUrl("");
       setPostType("text");
     } catch (error) {
       toast({
@@ -140,6 +181,19 @@ const Index = () => {
               {/* Image Section */}
               {(postType === "image" || postType === "article-image") && (
                 <ImageSection imageUrl={imageUrl} onImageUrlChange={setImageUrl} />
+              )}
+
+              {/* Article URL Input */}
+              {(postType === "article" || postType === "article-image") && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-foreground">Article URL</Label>
+                  <Input
+                    value={articleUrl}
+                    onChange={(e) => setArticleUrl(e.target.value)}
+                    placeholder="https://blog.example.com/post"
+                    className="bg-card border-border focus:border-primary"
+                  />
+                </div>
               )}
 
               {/* Video Input */}

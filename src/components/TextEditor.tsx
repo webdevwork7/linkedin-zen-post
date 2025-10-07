@@ -80,7 +80,7 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
     setIsRewriting(true);
     const result = await callOpenRouter(
       value,
-      "You are a professional LinkedIn content writer. Improve and rewrite the following text to make it more engaging, professional, and suitable for LinkedIn. Keep the same general message but enhance the writing quality. Return only the rewritten text without any explanations."
+      "You are a professional LinkedIn content writer. Rewrite the following text to make it more engaging, professional, and suitable for LinkedIn. Keep the same general message but enhance the writing quality. CRITICAL: Return ONLY the single rewritten text itself with absolutely no options, no numbered lists, no explanations, no preambles like 'here are options' or 'option 1/2/3', and no additional commentary whatsoever. Just output the improved text directly as if you are posting it."
     );
     
     if (result) {

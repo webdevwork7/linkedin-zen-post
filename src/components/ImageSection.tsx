@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Upload, Search, Loader2, X } from "lucide-react";
+import { Link, Search, Loader2, X } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,21 +13,9 @@ interface ImageSectionProps {
 
 const ImageSection = ({ imageUrl, onImageUrlChange }: ImageSectionProps) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [directUrl, setDirectUrl] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Create a local URL for preview
-      const localUrl = URL.createObjectURL(file);
-      onImageUrlChange(localUrl);
-      toast({
-        title: "Image Uploaded",
-        description: "Image preview loaded. Note: You'll need to host this image before posting.",
-      });
-    }
-  };
 
   const searchPexels = async () => {
     if (!searchQuery.trim()) {
@@ -99,25 +87,47 @@ const ImageSection = ({ imageUrl, onImageUrlChange }: ImageSectionProps) => {
       transition={{ delay: 0.2 }}
       className="space-y-4"
     >
-      <Label className="text-sm font-semibold text-foreground">Image</Label>
+      <Label className="text-sm font-semibold text-foreground">Image (Public URL Only)</Label>
       
-      {/* Upload Section */}
+      {/* Direct URL Input */}
       <div className="space-y-2">
-        <label className="block">
-          <div className="border-2 border-dashed border-border hover:border-primary transition-colors rounded-lg p-6 cursor-pointer bg-card">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleFileUpload}
-              className="hidden"
+        <Label className="text-sm text-muted-foreground">Enter Image URL</Label>
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Link className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={directUrl}
+              onChange={(e) => setDirectUrl(e.target.value)}
+              placeholder="https://example.com/image.jpg"
+              className="pl-10 bg-card border-border focus:border-primary"
+              onKeyPress={(e) => {
+                if (e.key === "Enter" && directUrl.trim()) {
+                  onImageUrlChange(directUrl);
+                  toast({
+                    title: "✅ Image URL Added",
+                    description: "Image URL has been set.",
+                  });
+                }
+              }}
             />
-            <div className="flex flex-col items-center gap-2 text-center">
-              <Upload className="w-8 h-8 text-muted-foreground" />
-              <p className="text-sm font-medium text-foreground">Upload Image</p>
-              <p className="text-xs text-muted-foreground">Click to browse files</p>
-            </div>
           </div>
-        </label>
+          <Button
+            type="button"
+            onClick={() => {
+              if (directUrl.trim()) {
+                onImageUrlChange(directUrl);
+                toast({
+                  title: "✅ Image URL Added",
+                  description: "Image URL has been set.",
+                });
+              }
+            }}
+            disabled={!directUrl.trim()}
+            className="bg-primary hover:bg-primary-hover"
+          >
+            Add
+          </Button>
+        </div>
       </div>
 
       {/* Divider */}
@@ -126,7 +136,7 @@ const ImageSection = ({ imageUrl, onImageUrlChange }: ImageSectionProps) => {
           <div className="w-full border-t border-border"></div>
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-2 text-muted-foreground">Or</span>
+          <span className="bg-card px-2 text-muted-foreground">Or Search Pexels</span>
         </div>
       </div>
 

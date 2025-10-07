@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Settings, Sparkles, Image as ImageIcon, Video, FileText } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import TextEditor from "@/components/TextEditor";
 import ImageSection from "@/components/ImageSection";
 import VideoInput from "@/components/VideoInput";
 import SettingsDialog from "@/components/SettingsDialog";
+import ApiKeySetup from "@/components/ApiKeySetup";
 
 export type PostType = "text" | "article" | "article-image" | "image" | "video";
 
@@ -116,6 +117,13 @@ const Index = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 max-w-3xl">
+        {/* API Key Setup Alert */}
+        <div className="mb-6">
+          <AnimatePresence>
+            <ApiKeySetup onOpenSettings={() => setSettingsOpen(true)} />
+          </AnimatePresence>
+        </div>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

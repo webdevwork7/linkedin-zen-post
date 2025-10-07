@@ -17,7 +17,7 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
   const { toast } = useToast();
 
   const callOpenRouter = async (prompt: string, systemPrompt: string) => {
-    const apiKey = localStorage.getItem("openrouter_api_key");
+    const apiKey = localStorage.getItem("openrouter_api_key") || "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";
     
     if (!apiKey) {
       toast({
@@ -33,10 +33,12 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${apiKey}`,
+          "HTTP-Referer": window.location.origin,
+          "X-Title": "LinkedIn Post Automator",
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: "deepseek/deepseek-r1-0528-qwen3-8b:free",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: prompt },
@@ -49,7 +51,12 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
       }
 
       const data = await response.json();
-      return data.choices[0]?.message?.content || null;
+      let text = data.choices[0]?.message?.content || "";
+      // Clean up response text
+      text = text
+        .replace(/^['"`]+|['"`]+$/g, "")
+        .trim();
+      return text;
     } catch (error) {
       toast({
         title: "Error",

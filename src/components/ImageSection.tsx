@@ -27,7 +27,7 @@ const ImageSection = ({ imageUrl, onImageUrlChange }: ImageSectionProps) => {
       return;
     }
 
-    const apiKey = localStorage.getItem("pexels_api_key");
+    const apiKey = localStorage.getItem("pexels_api_key") || "88Qykg1vwK4s2Q73EgXOvKaSxAH5VUHKMVGC2NBt1TXD2sJp0hnnsKia";
     
     if (!apiKey) {
       toast({

@@ -15,6 +15,7 @@ const ImageSection = ({ imageUrl, onImageUrlChange }: ImageSectionProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [directUrl, setDirectUrl] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [pexelsResults, setPexelsResults] = useState<{ preview: string; full: string }[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [localPreview, setLocalPreview] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
@@ -45,7 +46,7 @@ const ImageSection = ({ imageUrl, onImageUrlChange }: ImageSectionProps) => {
 
     try {
       const response = await fetch(
-        `https://api.pexels.com/v1/search?query=${encodeURIComponent(searchQuery)}&per_page=1`,
+        `https://api.pexels.com/v1/search?query=${encodeURIComponent(searchQuery)}&per_page=4`,
         {
           headers: {
             Authorization: apiKey,
@@ -58,12 +59,16 @@ const ImageSection = ({ imageUrl, onImageUrlChange }: ImageSectionProps) => {
       }
 
       const data = await response.json();
-      
+
       if (data.photos && data.photos.length > 0) {
-        onImageUrlChange(data.photos[0].src.large);
+        const results = (data.photos as Array<{ src: Record<string, string> }>).map((p) => ({
+          preview: p.src.medium || p.src.small || p.src.large,
+          full: p.src.large || p.src.original || p.src.medium,
+        }));
+        setPexelsResults(results);
         toast({
-          title: "✨ Image Found!",
-          description: "Image loaded from Pexels.",
+          title: "✨ Images Found!",
+          description: "Select one of the results below.",
         });
       } else {
         toast({
@@ -198,6 +203,43 @@ const ImageSection = ({ imageUrl, onImageUrlChange }: ImageSectionProps) => {
           </Button>
         </div>
       </div>
+
+      {/* Pexels Results Grid */}
+      {pexelsResults.length > 0 && (
+        <div className="space-y-2">
+          <Label className="text-sm text-muted-foreground">Select one of the generated images</Label>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {pexelsResults.map((img, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  onImageUrlChange(img.full);
+                  toast({ title: "✅ Selected", description: "Image chosen from Pexels." });
+                }}
+                className={`relative rounded-lg overflow-hidden border ${
+                  imageUrl === img.full ? "border-primary ring-2 ring-primary" : "border-border"
+                } focus:outline-none`}
+              >
+                <img src={img.preview} alt={`Result ${idx + 1}`} className="w-full h-32 object-cover" />
+                <span className="absolute bottom-2 right-2 text-xs px-2 py-1 rounded bg-background/80 border">
+                  {imageUrl === img.full ? "Selected" : "Select"}
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => setPexelsResults([])}
+              className="text-xs"
+            >
+              Clear results
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Divider */}
       <div className="relative">

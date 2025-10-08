@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings, Sparkles, Image as ImageIcon, Video, FileText } from "lucide-react";
+import { Settings, Sparkles, Image as ImageIcon, FileText } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,17 +9,15 @@ import { useToast } from "@/hooks/use-toast";
 import PostTypeSelector from "@/components/PostTypeSelector";
 import TextEditor from "@/components/TextEditor";
 import ImageSection from "@/components/ImageSection";
-import VideoInput from "@/components/VideoInput";
 import SettingsDialog from "@/components/SettingsDialog";
 import ApiKeySetup from "@/components/ApiKeySetup";
 
-export type PostType = "text" | "article" | "article-image" | "image" | "video";
+export type PostType = "text" | "article" | "image";
 
 const Index = () => {
   const [postType, setPostType] = useState<PostType>("text");
   const [caption, setCaption] = useState("");
   const [imageUrl, setImageUrl] = useState("");
-  const [videoUrl, setVideoUrl] = useState("");
   const [articleUrl, setArticleUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -57,16 +55,7 @@ const Index = () => {
       return;
     }
 
-    if (postType === "video" && !videoUrl.trim()) {
-      toast({
-        title: "Missing Video URL",
-        description: "Please provide a video URL for a video post.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if ((postType === "article" || postType === "article-image") && !articleUrl.trim()) {
+    if (postType === "article" && !articleUrl.trim()) {
       toast({
         title: "Missing Article URL",
         description: "Please provide the article URL for this post type.",
@@ -85,13 +74,10 @@ const Index = () => {
         text: caption,
       };
 
-      if (postType === "image" || postType === "article-image") {
+      if (postType === "image") {
         payload.image_url = imageUrl;
       }
-      if (postType === "video") {
-        payload.video_url = videoUrl;
-      }
-      if (postType === "article" || postType === "article-image") {
+      if (postType === "article") {
         payload.article_url = articleUrl;
       }
 
@@ -116,7 +102,6 @@ const Index = () => {
       // Reset form
       setCaption("");
       setImageUrl("");
-      setVideoUrl("");
       setArticleUrl("");
       setPostType("text");
     } catch (error) {
@@ -179,12 +164,12 @@ const Index = () => {
               <TextEditor value={caption} onChange={setCaption} />
 
               {/* Image Section */}
-              {(postType === "image" || postType === "article-image") && (
+              {postType === "image" && (
                 <ImageSection imageUrl={imageUrl} onImageUrlChange={setImageUrl} />
               )}
 
               {/* Article URL Input */}
-              {(postType === "article" || postType === "article-image") && (
+              {postType === "article" && (
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold text-foreground">Article URL</Label>
                   <Input
@@ -194,11 +179,6 @@ const Index = () => {
                     className="bg-card border-border focus:border-primary"
                   />
                 </div>
-              )}
-
-              {/* Video Input */}
-              {postType === "video" && (
-                <VideoInput value={videoUrl} onChange={setVideoUrl} />
               )}
 
               {/* Submit Button */}
@@ -244,9 +224,9 @@ const Index = () => {
             <p className="text-xs text-muted-foreground mt-1">Pexels integration</p>
           </Card>
           <Card className="p-4 text-center hover:shadow-lg transition-shadow">
-            <Video className="w-8 h-8 text-primary mx-auto mb-2" />
+            <FileText className="w-8 h-8 text-primary mx-auto mb-2" />
             <p className="text-sm font-medium text-foreground">Multi-Format</p>
-            <p className="text-xs text-muted-foreground mt-1">Text, images & videos</p>
+            <p className="text-xs text-muted-foreground mt-1">Text & images</p>
           </Card>
         </motion.div>
       </main>

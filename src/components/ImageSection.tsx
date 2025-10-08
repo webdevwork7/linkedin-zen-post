@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Link, Search, Loader2, X } from "lucide-react";
+import { Link, Search, Loader2, X, UploadCloud } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,9 @@ const ImageSection = ({ imageUrl, onImageUrlChange }: ImageSectionProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [directUrl, setDirectUrl] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [localPreview, setLocalPreview] = useState<string>("");
+  const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
 
   const searchPexels = async () => {
@@ -77,6 +80,72 @@ const ImageSection = ({ imageUrl, onImageUrlChange }: ImageSectionProps) => {
       });
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setSelectedFile(file);
+    if (file) {
+      const preview = URL.createObjectURL(file);
+      setLocalPreview(preview);
+    } else {
+      setLocalPreview("");
+    }
+  };
+
+  const uploadToCloudinary = async () => {
+    if (!selectedFile) {
+      toast({
+        title: "No file selected",
+        description: "Please choose an image to upload.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined;
+    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET as string | undefined;
+
+    if (!cloudName || !uploadPreset) {
+      toast({
+        title: "Missing Cloudinary config",
+        description: "Check VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+      formData.append("upload_preset", uploadPreset);
+
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json();
+
+      const secureUrl = data.secure_url as string | undefined;
+      if (!secureUrl) throw new Error("No secure_url returned");
+
+      onImageUrlChange(secureUrl);
+      toast({
+        title: "✅ Uploaded",
+        description: "Image uploaded to Cloudinary.",
+      });
+    } catch (err) {
+      toast({
+        title: "Upload error",
+        description: "Could not upload to Cloudinary.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -164,6 +233,32 @@ const ImageSection = ({ imageUrl, onImageUrlChange }: ImageSectionProps) => {
             )}
           </Button>
         </div>
+      </div>
+
+      {/* Divider */}
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-border"></div>
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-card px-2 text-muted-foreground">Or Upload Local Image</span>
+        </div>
+      </div>
+
+      {/* Local Upload */}
+      <div className="space-y-2">
+        <Label className="text-sm text-muted-foreground">Choose image to upload</Label>
+        <div className="flex gap-2 items-center">
+          <Input type="file" accept="image/*" onChange={handleFileChange} className="flex-1" />
+          <Button type="button" onClick={uploadToCloudinary} disabled={!selectedFile || isUploading} className="bg-primary hover:bg-primary-hover">
+            {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><UploadCloud className="w-4 h-4 mr-2" /> Upload</>}
+          </Button>
+        </div>
+        {localPreview && (
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative rounded-lg overflow-hidden border border-border">
+            <img src={localPreview} alt="Local Preview" className="w-full h-48 object-cover" />
+          </motion.div>
+        )}
       </div>
 
       {/* Image Preview */}

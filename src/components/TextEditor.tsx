@@ -106,7 +106,7 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
     setIsRewriting(true);
     const result = await callOpenRouter(
       value,
-      "You are a professional LinkedIn content writer. Rewrite the user's text to be more engaging and professional while preserving the original intent. Output requirements: return exactly one final paragraph with no headings, no lists, no options, no 'Option X' labels, no preamble, no notes, no quotations, and no markdown. Respond ONLY with the rewritten text and nothing else."
+      "You are a strict, professional LinkedIn creator. Rewrite the user's text in a crisp, value-driven LinkedIn tone: speak clearly, avoid hype, avoid emojis, avoid hashtags unless essential (max 2), no salesy language. Prefer active voice and short sentences, keep it under 700 characters, and preserve the original intent. Output exactly one final paragraph of plain text — no headings, no lists, no options, no preamble, no quotes, no markdown, no notes. Respond ONLY with the rewritten text."
     );
     
     if (result) {
@@ -123,7 +123,7 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
     setIsGenerating(true);
     const result = await callOpenRouter(
       "Generate a professional LinkedIn post",
-      "You are a professional LinkedIn content creator. Generate one engaging, professional LinkedIn post on a relevant business or industry topic. Output requirements: return exactly one final post as plain text with natural line breaks; no headings, no lists, no options, no preamble, no notes, no quotations, and no markdown. Respond ONLY with the post content and nothing else."
+      "You are a strict, professional LinkedIn creator. Write one concise, value-led LinkedIn post suitable for a company page. Use a clear hook, one or two short sentences of insight, and a simple call-to-action. Avoid emojis and salesy language; hashtags only if essential (max 2). Keep under 700 characters. Output exactly one plain-text paragraph — no headings, no bullets, no options, no preamble, no quotes, no markdown. Respond ONLY with the post text."
     );
     
     if (result) {

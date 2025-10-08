@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Settings, Sparkles, Image as ImageIcon, FileText } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -22,8 +23,23 @@ const Index = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const isAuthed = useMemo(() => localStorage.getItem("auth") === "true", []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("auth");
+    localStorage.removeItem("auth_email");
+    toast({ title: "Logged out", description: "You have been signed out." });
+    navigate("/login");
+  };
 
   const handleSubmit = async () => {
+    if (localStorage.getItem("auth") !== "true") {
+      toast({ title: "Please sign in", description: "Login to submit posts.", variant: "destructive" });
+      navigate("/login");
+      return;
+    }
     // Get webhook URL from environment
     const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL as string | undefined;
     
@@ -130,14 +146,19 @@ const Index = () => {
             </div>
             <h1 className="text-2xl font-bold text-foreground">LinkedIn Post Automator</h1>
           </div>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setSettingsOpen(true)}
-            className="hover:bg-accent"
-          >
-            <Settings className="w-5 h-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setSettingsOpen(true)}
+              className="hover:bg-accent"
+            >
+              <Settings className="w-5 h-5" />
+            </Button>
+            {isAuthed && (
+              <Button variant="outline" onClick={handleLogout} className="hover:bg-accent">Logout</Button>
+            )}
+          </div>
         </div>
       </motion.header>
 

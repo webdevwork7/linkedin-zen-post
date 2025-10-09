@@ -1,24 +1,46 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Link, Search, Loader2, X, UploadCloud } from "lucide-react";
+import {
+  Link,
+  Search,
+  Loader2,
+  X,
+  UploadCloud,
+  Wand2,
+  Sparkles,
+} from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import CharacterLengthSelector from "./CharacterLengthSelector";
 
 interface ImageSectionProps {
   imageUrl: string;
   onImageUrlChange: (url: string) => void;
+  caption: string;
+  onCaptionChange: (caption: string) => void;
 }
 
-const ImageSection = ({ imageUrl, onImageUrlChange }: ImageSectionProps) => {
+const ImageSection = ({
+  imageUrl,
+  onImageUrlChange,
+  caption,
+  onCaptionChange,
+}: ImageSectionProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [directUrl, setDirectUrl] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [pexelsResults, setPexelsResults] = useState<{ preview: string; full: string }[]>([]);
+  const [pexelsResults, setPexelsResults] = useState<
+    { preview: string; full: string }[]
+  >([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [localPreview, setLocalPreview] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
+  const [isRewriting, setIsRewriting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [characterLength, setCharacterLength] = useState(100);
   const { toast } = useToast();
 
   const searchPexels = async () => {
@@ -32,7 +54,7 @@ const ImageSection = ({ imageUrl, onImageUrlChange }: ImageSectionProps) => {
     }
 
     const apiKey = import.meta.env.VITE_PEXELS_API_KEY as string | undefined;
-    
+
     if (!apiKey) {
       toast({
         title: "Missing API Key",
@@ -46,7 +68,9 @@ const ImageSection = ({ imageUrl, onImageUrlChange }: ImageSectionProps) => {
 
     try {
       const response = await fetch(
-        `https://api.pexels.com/v1/search?query=${encodeURIComponent(searchQuery)}&per_page=4`,
+        `https://api.pexels.com/v1/search?query=${encodeURIComponent(
+          searchQuery
+        )}&per_page=4`,
         {
           headers: {
             Authorization: apiKey,
@@ -61,7 +85,9 @@ const ImageSection = ({ imageUrl, onImageUrlChange }: ImageSectionProps) => {
       const data = await response.json();
 
       if (data.photos && data.photos.length > 0) {
-        const results = (data.photos as Array<{ src: Record<string, string> }>).map((p) => ({
+        const results = (
+          data.photos as Array<{ src: Record<string, string> }>
+        ).map((p) => ({
           preview: p.src.medium || p.src.small || p.src.large,
           full: p.src.large || p.src.original || p.src.medium,
         }));
@@ -109,13 +135,18 @@ const ImageSection = ({ imageUrl, onImageUrlChange }: ImageSectionProps) => {
       return;
     }
 
-    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined;
-    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET as string | undefined;
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as
+      | string
+      | undefined;
+    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET as
+      | string
+      | undefined;
 
     if (!cloudName || !uploadPreset) {
       toast({
         title: "Missing Cloudinary config",
-        description: "Check VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET.",
+        description:
+          "Check VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET.",
         variant: "destructive",
       });
       return;
@@ -127,10 +158,13 @@ const ImageSection = ({ imageUrl, onImageUrlChange }: ImageSectionProps) => {
       formData.append("file", selectedFile);
       formData.append("upload_preset", uploadPreset);
 
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       if (!res.ok) throw new Error("Upload failed");
       const data = await res.json();
@@ -161,8 +195,10 @@ const ImageSection = ({ imageUrl, onImageUrlChange }: ImageSectionProps) => {
       transition={{ delay: 0.2 }}
       className="space-y-4"
     >
-      <Label className="text-sm font-semibold text-foreground">Image (Public URL Only)</Label>
-      
+      <Label className="text-sm font-semibold text-foreground">
+        Image (Public URL Only)
+      </Label>
+
       {/* Direct URL Input */}
       <div className="space-y-2">
         <Label className="text-sm text-muted-foreground">Enter Image URL</Label>
@@ -207,7 +243,9 @@ const ImageSection = ({ imageUrl, onImageUrlChange }: ImageSectionProps) => {
       {/* Pexels Results Grid */}
       {pexelsResults.length > 0 && (
         <div className="space-y-2">
-          <Label className="text-sm text-muted-foreground">Select one of the generated images</Label>
+          <Label className="text-sm text-muted-foreground">
+            Select one of the generated images
+          </Label>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {pexelsResults.map((img, idx) => (
               <button
@@ -215,13 +253,22 @@ const ImageSection = ({ imageUrl, onImageUrlChange }: ImageSectionProps) => {
                 type="button"
                 onClick={() => {
                   onImageUrlChange(img.full);
-                  toast({ title: "✅ Selected", description: "Image chosen from Pexels." });
+                  toast({
+                    title: "✅ Selected",
+                    description: "Image chosen from Pexels.",
+                  });
                 }}
                 className={`relative rounded-lg overflow-hidden border ${
-                  imageUrl === img.full ? "border-primary ring-2 ring-primary" : "border-border"
+                  imageUrl === img.full
+                    ? "border-primary ring-2 ring-primary"
+                    : "border-border"
                 } focus:outline-none`}
               >
-                <img src={img.preview} alt={`Result ${idx + 1}`} className="w-full h-32 object-cover" />
+                <img
+                  src={img.preview}
+                  alt={`Result ${idx + 1}`}
+                  className="w-full h-32 object-cover"
+                />
                 <span className="absolute bottom-2 right-2 text-xs px-2 py-1 rounded bg-background/80 border">
                   {imageUrl === img.full ? "Selected" : "Select"}
                 </span>
@@ -247,13 +294,17 @@ const ImageSection = ({ imageUrl, onImageUrlChange }: ImageSectionProps) => {
           <div className="w-full border-t border-border"></div>
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-2 text-muted-foreground">Or Search Pexels</span>
+          <span className="bg-card px-2 text-muted-foreground">
+            Or Search Pexels
+          </span>
         </div>
       </div>
 
       {/* Pexels Search */}
       <div className="space-y-2">
-        <Label className="text-sm text-muted-foreground">Get Image by Prompt</Label>
+        <Label className="text-sm text-muted-foreground">
+          Get Image by Prompt
+        </Label>
         <div className="flex gap-2">
           <Input
             value={searchQuery}
@@ -283,22 +334,50 @@ const ImageSection = ({ imageUrl, onImageUrlChange }: ImageSectionProps) => {
           <div className="w-full border-t border-border"></div>
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-2 text-muted-foreground">Or Upload Local Image</span>
+          <span className="bg-card px-2 text-muted-foreground">
+            Or Upload Local Image
+          </span>
         </div>
       </div>
 
       {/* Local Upload */}
       <div className="space-y-2">
-        <Label className="text-sm text-muted-foreground">Choose image to upload</Label>
+        <Label className="text-sm text-muted-foreground">
+          Choose image to upload
+        </Label>
         <div className="flex gap-2 items-center">
-          <Input type="file" accept="image/*" onChange={handleFileChange} className="flex-1" />
-          <Button type="button" onClick={uploadToCloudinary} disabled={!selectedFile || isUploading} className="bg-primary hover:bg-primary-hover">
-            {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><UploadCloud className="w-4 h-4 mr-2" /> Upload</>}
+          <Input
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="flex-1"
+          />
+          <Button
+            type="button"
+            onClick={uploadToCloudinary}
+            disabled={!selectedFile || isUploading}
+            className="bg-primary hover:bg-primary-hover"
+          >
+            {isUploading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <>
+                <UploadCloud className="w-4 h-4 mr-2" /> Upload
+              </>
+            )}
           </Button>
         </div>
         {localPreview && (
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative rounded-lg overflow-hidden border border-border">
-            <img src={localPreview} alt="Local Preview" className="w-full h-48 object-cover" />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative rounded-lg overflow-hidden border border-border"
+          >
+            <img
+              src={localPreview}
+              alt="Local Preview"
+              className="w-full h-48 object-cover"
+            />
           </motion.div>
         )}
       </div>

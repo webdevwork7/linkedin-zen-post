@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import CharacterLengthSelector from "./CharacterLengthSelector";
 
 interface TextEditorProps {
   value: string;
@@ -14,6 +15,7 @@ interface TextEditorProps {
 const TextEditor = ({ value, onChange }: TextEditorProps) => {
   const [isRewriting, setIsRewriting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [characterLength, setCharacterLength] = useState(100);
   const { toast } = useToast();
 
   // Normalize model output to a single, clean paragraph (no options or preamble)
@@ -24,15 +26,29 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
       .replace(/\*\*?Option\s*\d+\s*:\*\*?/gi, "")
       .replace(/Option\s*\d+\s*:/gi, "");
     // Remove leading preambles like "Here it is", "Choose", "Response:"
-    text = text.replace(/^(?:here\s+(?:it|is)|choose.*|selected.*|response:?|output:?|final:?|options?:)\s*/i, "");
+    text = text.replace(
+      /^(?:here\s+(?:it|is)|choose.*|selected.*|response:?|output:?|final:?|options?:)\s*/i,
+      ""
+    );
     // Take the first non-empty paragraph if multiple paragraphs are present
-    const paragraphs = text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+    const paragraphs = text
+      .split(/\n{2,}/)
+      .map((p) => p.trim())
+      .filter(Boolean);
     if (paragraphs.length > 0) {
       text = paragraphs[0];
     }
     // If bullets or numbered lists are present, take the first clean line
-    const lines = text.split(/\n/).map((l) => l.trim()).filter(Boolean);
-    const firstLine = lines.find((l) => !/^(\*|-|\d+\.)\s/.test(l) && !/^\s*Option\s*\d+/i.test(l)) || lines[0] || "";
+    const lines = text
+      .split(/\n/)
+      .map((l) => l.trim())
+      .filter(Boolean);
+    const firstLine =
+      lines.find(
+        (l) => !/^(\*|-|\d+\.)\s/.test(l) && !/^\s*Option\s*\d+/i.test(l)
+      ) ||
+      lines[0] ||
+      "";
     text = firstLine;
     // Strip surrounding quotes/markdown and return
     return text
@@ -43,8 +59,10 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
   };
 
   const callOpenRouter = async (prompt: string, systemPrompt: string) => {
-    const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY as string | undefined;
-    
+    const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY as
+      | string
+      | undefined;
+
     if (!apiKey) {
       toast({
         title: "Missing API Key",
@@ -55,24 +73,27 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
     }
 
     try {
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "HTTP-Referer": window.location.origin,
-          "X-Title": "LinkedIn Post Automator",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "deepseek/deepseek-r1-0528-qwen3-8b:free",
-          temperature: 0.2,
-          stop: ["Option", "Choose", "Here it is", "Options"],
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: prompt },
-          ],
-        }),
-      });
+      const response = await fetch(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "HTTP-Referer": window.location.origin,
+            "X-Title": "LinkedIn Post Automator",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "deepseek/deepseek-r1-0528-qwen3-8b:free",
+            temperature: 0.2,
+            stop: ["Option", "Choose", "Here it is", "Options"],
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: prompt },
+            ],
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to call OpenRouter API");
@@ -106,9 +127,9 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
     setIsRewriting(true);
     const result = await callOpenRouter(
       value,
-      "You are a strict, professional LinkedIn creator. Rewrite the user's text in a crisp, value-driven LinkedIn tone: speak clearly, avoid hype, avoid emojis, avoid hashtags unless essential (max 2), no salesy language. Prefer active voice and short sentences, keep it under 700 characters, and preserve the original intent. Output exactly one final paragraph of plain text — no headings, no lists, no options, no preamble, no quotes, no markdown, no notes. Respond ONLY with the rewritten text."
+      `You are a strict, professional LinkedIn creator. Rewrite the user's text in a crisp, value-driven LinkedIn tone: speak clearly, avoid hype, avoid emojis, avoid hashtags unless essential (max 2), no salesy language. Prefer active voice and short sentences. CRITICAL: The output must be EXACTLY ${characterLength} characters or fewer. Count every character including spaces and punctuation. If the text exceeds ${characterLength} characters, cut it short and end with proper punctuation. Preserve the original intent within this strict character limit. Output exactly one final paragraph of plain text — no headings, no lists, no options, no preamble, no quotes, no markdown, no notes. Respond ONLY with the rewritten text that is ${characterLength} characters or fewer.`
     );
-    
+
     if (result) {
       onChange(result);
       toast({
@@ -123,9 +144,9 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
     setIsGenerating(true);
     const result = await callOpenRouter(
       "Generate a professional LinkedIn post",
-      "You are a strict, professional LinkedIn creator. Write one concise, value-led LinkedIn post suitable for a company page. Use a clear hook, one or two short sentences of insight, and a simple call-to-action. Avoid emojis and salesy language; hashtags only if essential (max 2). Keep under 700 characters. Output exactly one plain-text paragraph — no headings, no bullets, no options, no preamble, no quotes, no markdown. Respond ONLY with the post text."
+      `You are a strict, professional LinkedIn creator. Write one concise, value-led LinkedIn post suitable for a company page. Use a clear hook, one or two short sentences of insight, and a simple call-to-action. Avoid emojis and salesy language; hashtags only if essential (max 2). CRITICAL: The output must be EXACTLY ${characterLength} characters or fewer. Count every character including spaces and punctuation. If the text exceeds ${characterLength} characters, cut it short and end with proper punctuation. Output exactly one plain-text paragraph — no headings, no bullets, no options, no preamble, no quotes, no markdown. Respond ONLY with the post text that is ${characterLength} characters or fewer.`
     );
-    
+
     if (result) {
       onChange(result);
       toast({
@@ -143,15 +164,26 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
       transition={{ delay: 0.1 }}
       className="space-y-2"
     >
-      <Label className="text-sm font-semibold text-foreground">Post Content</Label>
+      <Label className="text-sm font-semibold text-foreground">
+        Post Content
+      </Label>
       <Textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="What do you want to share with your network?"
         className="min-h-[150px] resize-none bg-card border-border focus:border-primary transition-colors text-base"
       />
-      
-      <div className="flex flex-wrap gap-2">
+
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2">
+          <Label className="text-sm text-muted-foreground">Length:</Label>
+          <CharacterLengthSelector
+            value={characterLength}
+            onChange={setCharacterLength}
+            className="text-sm"
+          />
+        </div>
+
         <Button
           type="button"
           variant="outline"
@@ -172,7 +204,7 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
             </>
           )}
         </Button>
-        
+
         <Button
           type="button"
           variant="outline"

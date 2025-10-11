@@ -12,8 +12,11 @@ import TextEditor from "@/components/TextEditor";
 import ImageSection from "@/components/ImageSection";
 import SettingsDialog from "@/components/SettingsDialog";
 import ApiKeySetup from "@/components/ApiKeySetup";
+import InstagramForm from "@/components/InstagramForm";
 
 export type PostType = "text" | "article" | "image";
+
+type TabKey = "linkedin" | "instagram" | "facebook";
 
 const Index = () => {
   const [postType, setPostType] = useState<PostType>("text");
@@ -131,6 +134,8 @@ const Index = () => {
     }
   };
 
+  const [activeTab, setActiveTab] = useState<TabKey>("linkedin");
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -144,7 +149,11 @@ const Index = () => {
             <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
               <Sparkles className="w-6 h-6 text-primary-foreground" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground">LinkedIn Post Automator</h1>
+            <h1 className="text-2xl font-bold text-foreground">
+              {activeTab === "linkedin" && "LinkedIn Post Automator"}
+              {activeTab === "instagram" && "Instagram Post Automator"}
+              {activeTab === "facebook" && "Facebook Post Automator (Upcoming)"}
+            </h1>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -164,6 +173,29 @@ const Index = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 max-w-3xl">
+        {/* Tabs */}
+        <div className="mb-6 flex items-center gap-2">
+          <Button
+            variant={activeTab === "linkedin" ? "default" : "outline"}
+            onClick={() => setActiveTab("linkedin")}
+          >
+            LinkedIn
+          </Button>
+          <Button
+            variant={activeTab === "instagram" ? "default" : "outline"}
+            onClick={() => setActiveTab("instagram")}
+          >
+            Instagram
+          </Button>
+          <Button
+            variant={activeTab === "facebook" ? "default" : "outline"}
+            onClick={() => setActiveTab("facebook")}
+            disabled
+          >
+            Facebook (upcoming)
+          </Button>
+        </div>
+
         {/* API Key Setup Alert */}
         <div className="mb-6">
           <AnimatePresence>
@@ -171,85 +203,105 @@ const Index = () => {
           </AnimatePresence>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <Card className="p-6 shadow-lg">
-            <div className="space-y-6">
-              {/* Post Type */}
-              <PostTypeSelector value={postType} onChange={setPostType} />
+        {activeTab === "linkedin" && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <Card className="p-6 shadow-lg">
+              <div className="space-y-6">
+                {/* Post Type */}
+                <PostTypeSelector value={postType} onChange={setPostType} />
 
-              {/* Text Editor */}
-              <TextEditor value={caption} onChange={setCaption} />
+                {/* Text Editor */}
+                <TextEditor value={caption} onChange={setCaption} platform="linkedin" />
 
-              {/* Image Section */}
-              {postType === "image" && (
-                <ImageSection imageUrl={imageUrl} onImageUrlChange={setImageUrl} />
-              )}
-
-              {/* Article URL Input */}
-              {postType === "article" && (
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold text-foreground">Article URL</Label>
-                  <Input
-                    value={articleUrl}
-                    onChange={(e) => setArticleUrl(e.target.value)}
-                    placeholder="https://blog.example.com/post"
-                    className="bg-card border-border focus:border-primary"
+                {/* Image Section */}
+                {postType === "image" && (
+                  <ImageSection
+                    imageUrl={imageUrl}
+                    onImageUrlChange={setImageUrl}
+                    caption={caption}
+                    onCaptionChange={setCaption}
                   />
-                </div>
-              )}
+                )}
 
-              {/* Submit Button */}
-              <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  className="w-full h-12 text-lg font-semibold bg-primary hover:bg-primary-hover transition-colors"
-                  size="lg"
-                >
-                  {isSubmitting ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                      Sending to LinkedIn...
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-5 h-5" />
-                      Post to LinkedIn
-                    </div>
-                  )}
-                </Button>
-              </motion.div>
-            </div>
-          </Card>
-        </motion.div>
+                {/* Article URL Input */}
+                {postType === "article" && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold text-foreground">Article URL</Label>
+                    <Input
+                      value={articleUrl}
+                      onChange={(e) => setArticleUrl(e.target.value)}
+                      placeholder="https://blog.example.com/post"
+                      className="bg-card border-border focus:border-primary"
+                    />
+                  </div>
+                )}
 
-        {/* Info Cards */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4"
-        >
-          <Card className="p-4 text-center hover:shadow-lg transition-shadow">
-            <FileText className="w-8 h-8 text-primary mx-auto mb-2" />
-            <p className="text-sm font-medium text-foreground">AI-Powered</p>
-            <p className="text-xs text-muted-foreground mt-1">Smart content generation</p>
-          </Card>
-          <Card className="p-4 text-center hover:shadow-lg transition-shadow">
-            <ImageIcon className="w-8 h-8 text-primary mx-auto mb-2" />
-            <p className="text-sm font-medium text-foreground">Image Search</p>
-            <p className="text-xs text-muted-foreground mt-1">Pexels integration</p>
-          </Card>
-          <Card className="p-4 text-center hover:shadow-lg transition-shadow">
-            <FileText className="w-8 h-8 text-primary mx-auto mb-2" />
-            <p className="text-sm font-medium text-foreground">Multi-Format</p>
-            <p className="text-xs text-muted-foreground mt-1">Text & images</p>
-          </Card>
-        </motion.div>
+                {/* Submit Button */}
+                <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={isSubmitting}
+                    className="w-full h-12 text-lg font-semibold bg-primary hover:bg-primary-hover transition-colors"
+                    size="lg"
+                  >
+                    {isSubmitting ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                        Sending to LinkedIn...
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-5 h-5" />
+                        Post to LinkedIn
+                      </div>
+                    )}
+                  </Button>
+                </motion.div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {activeTab === "instagram" && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <InstagramForm />
+          </motion.div>
+        )}
+
+        {activeTab === "facebook" && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <Card className="p-6 shadow-lg">
+              <div className="space-y-2">
+                <h2 className="text-lg font-semibold">Facebook (Upcoming)</h2>
+                <p className="text-sm text-muted-foreground">This platform is coming soon. Stay tuned!</p>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+      {/* Info Cards */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4"
+      >
+        <Card className="p-4 text-center hover:shadow-lg transition-shadow">
+          <FileText className="w-8 h-8 text-primary mx-auto mb-2" />
+          <p className="text-sm font-medium text-foreground">AI-Powered</p>
+          <p className="text-xs text-muted-foreground mt-1">Smart content generation</p>
+        </Card>
+        <Card className="p-4 text-center hover:shadow-lg transition-shadow">
+          <ImageIcon className="w-8 h-8 text-primary mx-auto mb-2" />
+          <p className="text-sm font-medium text-foreground">Image Search</p>
+          <p className="text-xs text-muted-foreground mt-1">Pexels integration</p>
+        </Card>
+        <Card className="p-4 text-center hover:shadow-lg transition-shadow">
+          <FileText className="w-8 h-8 text-primary mx-auto mb-2" />
+          <p className="text-sm font-medium text-foreground">Multi-Format</p>
+          <p className="text-xs text-muted-foreground mt-1">Text & images</p>
+        </Card>
+      </motion.div>
       </main>
 
       {/* Settings Dialog */}

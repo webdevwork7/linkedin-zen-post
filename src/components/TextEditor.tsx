@@ -10,9 +10,10 @@ import CharacterLengthSelector from "./CharacterLengthSelector";
 interface TextEditorProps {
   value: string;
   onChange: (value: string) => void;
+  platform?: "linkedin" | "instagram";
 }
 
-const TextEditor = ({ value, onChange }: TextEditorProps) => {
+const TextEditor = ({ value, onChange, platform = "linkedin" }: TextEditorProps) => {
   const [isRewriting, setIsRewriting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [characterLength, setCharacterLength] = useState(100);
@@ -80,7 +81,7 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
           headers: {
             Authorization: `Bearer ${apiKey}`,
             "HTTP-Referer": window.location.origin,
-            "X-Title": "LinkedIn Post Automator",
+            "X-Title": platform === "instagram" ? "Instagram Post Automator" : "LinkedIn Post Automator",
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -127,7 +128,9 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
     setIsRewriting(true);
     const result = await callOpenRouter(
       value,
-      `You are a strict, professional LinkedIn creator. Rewrite the user's text in a crisp, value-driven LinkedIn tone: speak clearly, avoid hype, avoid emojis, avoid hashtags unless essential (max 2), no salesy language. Prefer active voice and short sentences. CRITICAL: The output must be EXACTLY ${characterLength} characters or fewer. Count every character including spaces and punctuation. If the text exceeds ${characterLength} characters, cut it short and end with proper punctuation. Preserve the original intent within this strict character limit. Output exactly one final paragraph of plain text — no headings, no lists, no options, no preamble, no quotes, no markdown, no notes. Respond ONLY with the rewritten text that is ${characterLength} characters or fewer.`
+      platform === "instagram"
+        ? `You are a concise, engaging Instagram caption writer. Rewrite the user's text in an authentic, human tone suitable for Instagram. Keep it short, conversational, and engaging. Emojis are allowed sparingly (max 3), and hashtags minimal (max 3). Prefer active voice and short lines. CRITICAL: The output must be EXACTLY ${characterLength} characters or fewer. Count all characters including spaces and punctuation. If the text exceeds ${characterLength}, cut it short and end with proper punctuation. Output ONE direct caption only — no headings, no bullets, no options, no preamble, no quotes, no markdown, no notes.`
+        : `You are a strict, professional LinkedIn creator. Rewrite the user's text in a crisp, value-driven LinkedIn tone: speak clearly, avoid hype, avoid emojis, avoid hashtags unless essential (max 2), no salesy language. Prefer active voice and short sentences. CRITICAL: The output must be EXACTLY ${characterLength} characters or fewer. Count every character including spaces and punctuation. If the text exceeds ${characterLength} characters, cut it short and end with proper punctuation. Preserve the original intent within this strict character limit. Output exactly one final paragraph of plain text — no headings, no lists, no options, no preamble, no quotes, no markdown, no notes. Respond ONLY with the rewritten text that is ${characterLength} characters or fewer.`
     );
 
     if (result) {
@@ -143,8 +146,10 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
   const handleGenerate = async () => {
     setIsGenerating(true);
     const result = await callOpenRouter(
-      "Generate a professional LinkedIn post",
-      `You are a strict, professional LinkedIn creator. Write one concise, value-led LinkedIn post suitable for a company page. Use a clear hook, one or two short sentences of insight, and a simple call-to-action. Avoid emojis and salesy language; hashtags only if essential (max 2). CRITICAL: The output must be EXACTLY ${characterLength} characters or fewer. Count every character including spaces and punctuation. If the text exceeds ${characterLength} characters, cut it short and end with proper punctuation. Output exactly one plain-text paragraph — no headings, no bullets, no options, no preamble, no quotes, no markdown. Respond ONLY with the post text that is ${characterLength} characters or fewer.`
+      platform === "instagram" ? "Generate an engaging Instagram caption" : "Generate a professional LinkedIn post",
+      platform === "instagram"
+        ? `You are an Instagram caption writer. Produce ONE concise caption suitable for Instagram. Keep it engaging and conversational, allow up to 3 emojis, and up to 3 short hashtags if essential. CRITICAL: The output must be EXACTLY ${characterLength} characters or fewer. Count all characters including spaces and punctuation. Output ONE direct caption only — no headings, no bullets, no options, no preamble, no quotes, no markdown.`
+        : `You are a strict, professional LinkedIn creator. Write one concise, value-led LinkedIn post suitable for a company page. Use a clear hook, one or two short sentences of insight, and a simple call-to-action. Avoid emojis and salesy language; hashtags only if essential (max 2). CRITICAL: The output must be EXACTLY ${characterLength} characters or fewer. Count every character including spaces and punctuation. If the text exceeds ${characterLength} characters, cut it short and end with proper punctuation. Output exactly one plain-text paragraph — no headings, no bullets, no options, no preamble, no quotes, no markdown. Respond ONLY with the post text that is ${characterLength} characters or fewer.`
     );
 
     if (result) {
